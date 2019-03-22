@@ -13,28 +13,33 @@ class ToDoListViewController: UITableViewController {
   //itemArray is an array of Item objects
   var itemArray = [Item]()
   
-  let defaults = UserDefaults.standard
+ // let defaults = UserDefaults.standard
+  //userDomainMask is the users directory. it's an array so get first position
+  let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+  
+  //print(dataFilePath)
   
   override func viewDidLoad() {
     super.viewDidLoad()
     
     //newItem will be a new object from the class Item
-    let newItem = Item()
-    newItem.title = "find mike"
-    itemArray.append(newItem)
-    
-    let newItem2 = Item()
-    newItem2.title = "find pop"
-    itemArray.append(newItem2)
-    
-    let newItem3 = Item()
-    newItem3.title = "find hih"
-    itemArray.append(newItem3)
-    
+//    let newItem = Item()
+//    newItem.title = "find mike"
+//    itemArray.append(newItem)
+//
+//    let newItem2 = Item()
+//    newItem2.title = "find pop"
+//    itemArray.append(newItem2)
+//
+//    let newItem3 = Item()
+//    newItem3.title = "find hih"
+//    itemArray.append(newItem3)
+//
     //the userDefaults array with the plist containing persisting data updated from the new itemArray objects to be set to the now old itemArray
-        if let items = defaults.array(forKey: "ToDoListArray") as? [Item] {
-          itemArray = items
-        }
+//        if let items = defaults.array(forKey: "ToDoListArray") as? [Item] {
+//          itemArray = items
+//        }
+    loadItems()
   }
   
   //MARK: - table view methods
@@ -76,9 +81,7 @@ class ToDoListViewController: UITableViewController {
 //    } else {
 //      itemArray[indexPath.row].done = false
 //    }
-    
-    //need to update the status of the .done and forces the delegate methods to be recalled.
-    tableView.reloadData()
+    saveItems()
     
     //highlights and then deselects the selected row
     tableView.deselectRow(at: indexPath, animated: true)
@@ -110,21 +113,46 @@ class ToDoListViewController: UITableViewController {
       //add new text to array and reload list to update
       self.itemArray.append(newItemToBeAdded)
       
-      //saving the updated itemArray using UserDefaults with the key 'ToDoListArray' in the plist
-      self.defaults.setValue(self.itemArray, forKey: "ToDoListArray")
-      
-      self.tableView.reloadData()
+      self.saveItems()
     }
-    
-
-
     
     //give the alert box an option to choose
     alert.addAction(action)
-    
     //present the alert
     present(alert, animated: true, completion: nil)
   }
+  
+  //MARK: - Model Manipulation Methods
+  
+  func saveItems() {
+    
+    let encoder = PropertyListEncoder()
+    //encode the itemArray into the propertyListEncoder() to make the plist
+    do {
+      let data = try encoder.encode(itemArray)
+      try data.write(to: dataFilePath!)
+    } catch {
+      print("Error encoding item Array - \(error.localizedDescription)")
+    }
+    
+    //saving the updated itemArray using UserDefaults with the key 'ToDoListArray' in the plist
+    //self.defaults.setValue(self.itemArray, forKey: "ToDoListArray")
+    self.tableView.reloadData()
+  }
+  
+  func loadItems() {
+    //using decodable to call the data from the plist and upload
+      if let data = try? Data(contentsOf: dataFilePath!) {
+      let decoder = PropertyListDecoder()
+        do {
+          itemArray = try decoder.decode([Item].self, from: data)
+        } catch {
+          print("Error decoding item: \(error.localizedDescription)")
+        }
+      }
+  }
+  
+  
   
 }
 
